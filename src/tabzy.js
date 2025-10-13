@@ -2,6 +2,7 @@ function Tabzy(id, options = {}) {
     this.opt = Object.assign(
         {
             panelDisplay: 'block',
+            hash: false,
         },
         options
     );
@@ -10,29 +11,64 @@ function Tabzy(id, options = {}) {
         throw new Error(`Tabzy Error: Element with id "${id}" not found.`);
     }
 
-    this._tabs = this._container.querySelectorAll('li'); // lấy ra các thẻ li con của ul
+    this._tabs = Array.from(this._container.querySelectorAll('li a[href]')); // từ thẻ ul lấy ra các thẻ a có href và là con của li
     if (this._tabs.length === 0) {
         throw new Error(`Tabzy: no <li> children found inside #${id}.`);
     }
 
-    // Xử lý click vào thẻ li
-    this._boundHandleClick = this._handleClick.bind(this);
-    this._container.addEventListener('click', this._boundHandleClick);
+    const panels = this._tabs
+        .map((tab) => {
+            return this._getPanel(tab);
+        })
+        .filter(Boolean);
+
+    if (this._tabs.length !== panels.length) {
+        throw new Error(
+            `Tabzy Error: Mismatch between tabs and panels. Found ${panels.length} panels for ${this._tabs.length} tabs. ` +
+                `Ensure every <li> has an <a href="#panelId"> that matches an existing panel element (id="panelId").`
+        );
+    }
 
     this._init();
 }
 
 Tabzy.prototype._init = function () {
-    // Lần đầu mở trang web, mặc định chọn thẻ li đầu tiên làm currentTab
-    this._currentTab = this._tabs[0];
+    // Lần đầu mở trang web, mặc định chọn thẻ li đầu tiên làm currentTab. Nếu có hash, lấy hash làm currentTab
+    let startTab = this._tabs[0].closest('li');
 
-    this._currentHash = window.location.hash;
+    if (this.opt.hash) {
+        const currentHash = window.location.hash;
+        if (currentHash) {
+            const tabLink = this._container.querySelector(`a[href='${currentHash}']`);
+
+            if (tabLink) {
+                startTab = tabLink.closest('li');
+            }
+        }
+    }
+
+    this._currentTab = startTab;
 
     // classList: mặc định luôn có 'tabzy--active', cộng thêm các class caller truyền vào nếu có
     this._classNames = ('tabzy--active ' + (this.opt.cssClass ?? '')).trim();
 
+    // Xử lý click vào thẻ li
+    this._boundHandleClick = this._handleClick.bind(this);
+    this._container.addEventListener('click', this._boundHandleClick);
+
+    // Xử lý hashchange
+    this._boundHashChange = this._handleHashChange.bind(this);
+    if (this.opt.hash) {
+        window.addEventListener('hashchange', this._boundHashChange);
+    }
+
     this._addClassName();
-    this._activeHandler();
+    this._renderState();
+};
+
+// Hàm xử lý hash change
+Tabzy.prototype._handleHashChange = function () {
+    this.switch(window.location.hash || `${this._tabs[0].getAttribute('href')}`);
 };
 
 // Hàm gán class cho currentTab
@@ -50,12 +86,12 @@ Tabzy.prototype._removeClassName = function () {
 };
 
 // Hàm xử lý trạng thái active: nếu li không có class 'tabzy--active' thì content tương ứng sẽ bị ẩn
-Tabzy.prototype._activeHandler = function () {
+Tabzy.prototype._renderState = function () {
     this._tabs.forEach((tab) => {
         const panel = this._getPanel(tab);
         if (!panel) return;
 
-        if (tab.classList.contains('tabzy--active')) {
+        if (tab.closest('li').classList.contains('tabzy--active')) {
             panel.style.display = this.opt.panelDisplay;
         } else {
             panel.style.display = 'none';
@@ -65,10 +101,7 @@ Tabzy.prototype._activeHandler = function () {
 
 // Hàm lấy panel tương ứng với thẻ li tab
 Tabzy.prototype._getPanel = function (tab) {
-    const tabLink = tab.querySelector('a[href]');
-    if (!tabLink) return;
-
-    const panelId = tabLink.getAttribute('href');
+    const panelId = tab.getAttribute('href');
     const panel = document.querySelector(panelId);
 
     return panel;
@@ -76,7 +109,13 @@ Tabzy.prototype._getPanel = function (tab) {
 
 // Hàm switch
 Tabzy.prototype.switch = function (id) {
-    const tabLink = this._container.querySelector(`[href='${id}']`);
+    let tabLink;
+
+    if (id.startsWith('#')) {
+        tabLink = this._container.querySelector(`[href='${id}']`);
+    } else {
+        tabLink = this._container.querySelector(`[href='#${id}']`);
+    }
     if (!tabLink) return;
 
     const targetTab = tabLink.closest('li');
@@ -89,7 +128,11 @@ Tabzy.prototype.switch = function (id) {
     // Gán lại class
     this._addClassName();
     // Gọi lại hàm xử lý trạng thái active
-    this._activeHandler();
+    this._renderState();
+
+    if (this.opt.hash) {
+        window.location.hash = tabLink.getAttribute('href').slice(1);
+    }
 };
 
 // Hàm destroy
@@ -104,6 +147,7 @@ Tabzy.prototype.destroy = function () {
     });
 
     this._container.removeEventListener('click', this._boundHandleClick);
+    window.removeEventListener('hashchange', this._boundHashChange);
 
     // Xóa các tham chiếu
     this._currentTab = null;
@@ -115,9 +159,12 @@ Tabzy.prototype._handleClick = function (e) {
     const tabLink = e.target.closest('a[href]');
     if (tabLink) {
         e.preventDefault();
-        const currentTabId = tabLink.getAttribute('href');
-        this.switch(currentTabId);
 
-        window.location.hash = tabLink.getAttribute('href').slice(1);
+        if (this.opt.hash) {
+            window.location.hash = tabLink.getAttribute('href').slice(1);
+        } else {
+            const currentTabId = tabLink.getAttribute('href');
+            this.switch(currentTabId);
+        }
     }
 };
