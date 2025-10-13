@@ -1,7 +1,7 @@
 function Tabzy(id, options = {}) {
     this.opt = Object.assign(
         {
-            contentDisplay: 'block',
+            panelDisplay: 'block',
         },
         options
     );
@@ -16,10 +16,8 @@ function Tabzy(id, options = {}) {
     }
 
     // Xử lý click vào thẻ li
-    // this._container.addEventListener('click', this._handleClick);
-    this._container.onclick = (e) => {
-        this._handleClick(e);
-    };
+    this._boundHandleClick = this._handleClick.bind(this);
+    this._container.addEventListener('click', this._boundHandleClick);
 
     this._init();
 }
@@ -58,7 +56,7 @@ Tabzy.prototype._activeHandler = function () {
         if (!panel) return;
 
         if (tab.classList.contains('tabzy--active')) {
-            panel.style.display = this.opt.contentDisplay;
+            panel.style.display = this.opt.panelDisplay;
         } else {
             panel.style.display = 'none';
         }
@@ -66,7 +64,7 @@ Tabzy.prototype._activeHandler = function () {
 };
 
 // Hàm lấy panel tương ứng với thẻ li tab
-Tabzy.prototype._getPanel = (tab) => {
+Tabzy.prototype._getPanel = function (tab) {
     const tabLink = tab.querySelector('a[href]');
     if (!tabLink) return;
 
@@ -100,11 +98,17 @@ Tabzy.prototype.destroy = function () {
 
     this._tabs.forEach((tab) => {
         const panel = this._getPanel(tab);
-        if (!panel) return;
-        panel.style.cssText = '';
+        if (panel) {
+            panel.style.cssText = '';
+        }
     });
 
+    this._container.removeEventListener('click', this._boundHandleClick);
+
+    // Xóa các tham chiếu
     this._currentTab = null;
+    this._tabs = null;
+    this._container = null;
 };
 
 Tabzy.prototype._handleClick = function (e) {
