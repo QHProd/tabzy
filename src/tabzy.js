@@ -5,106 +5,115 @@ function Tabzy(id, options = {}) {
         },
         options
     );
-    const tabId = document.getElementById(id); // lấy ra thẻ ul
-    if (!tabId) {
+    this._container = document.getElementById(id); // lấy ra thẻ ul
+    if (!this._container) {
         throw new Error(`Tabzy Error: Element with id "${id}" not found.`);
     }
 
-    const tabChilds = tabId.querySelectorAll('li'); // lấy ra các thẻ li con của ul
-    if (tabChilds.length === 0) {
+    this._tabs = this._container.querySelectorAll('li'); // lấy ra các thẻ li con của ul
+    if (this._tabs.length === 0) {
         throw new Error(`Tabzy: no <li> children found inside #${id}.`);
     }
 
+    // Xử lý click vào thẻ li
+    // this._container.addEventListener('click', this._handleClick);
+    this._container.onclick = (e) => {
+        this._handleClick(e);
+    };
+
+    this._init();
+}
+
+Tabzy.prototype._init = function () {
     // Lần đầu mở trang web, mặc định chọn thẻ li đầu tiên làm currentTab
-    this._currentTab = tabChilds[0];
+    this._currentTab = this._tabs[0];
+
+    this._currentHash = window.location.hash;
 
     // classList: mặc định luôn có 'tabzy--active', cộng thêm các class caller truyền vào nếu có
-    const classNames = ('tabzy--active ' + (this.opt.cssClass ?? '')).trim();
-
-    // Hàm gán class cho currentTab
-    this._addClassName = () => {
-        classNames.split(' ').forEach((className) => {
-            this._currentTab.classList.add(className);
-        });
-    };
-
-    // Hàm gỡ class cho currentTab
-    this._removeClassName = () => {
-        classNames.split(' ').forEach((className) => {
-            this._currentTab.classList.remove(className);
-        });
-    };
-
-    // Hàm xử lý trạng thái active: nếu li không có class 'tabzy--active' thì content tương ứng sẽ bị ẩn
-    this._activeHandler = () => {
-        tabChilds.forEach((child) => {
-            const tabContent = this._getTabContent(child);
-            if (!tabContent) return;
-
-            if (child.classList.contains('tabzy--active')) {
-                tabContent.style.display = this.opt.contentDisplay;
-            } else {
-                tabContent.style.display = 'none';
-            }
-        });
-    };
-
-    // Hàm lấy tabContent tương ứng với thẻ li tabChild
-    this._getTabContent = (tabChild) => {
-        const tabLink = tabChild.querySelector('a[href]');
-        if (!tabLink) return;
-
-        const tabContentId = tabLink.getAttribute('href');
-        const tabContent = document.querySelector(tabContentId);
-
-        return tabContent;
-    };
-
-    // Hàm toggle
-    this.toggle = (id) => {
-        const tabLink = tabId.querySelector(`[href='${id}']`);
-        if (!tabLink) return;
-
-        const targetTab = tabLink.closest('li');
-
-        if (!targetTab || targetTab === this._currentTab) return;
-        // Gỡ class mặc định khỏi currentTab
-        this._removeClassName();
-        // Gán lại currentTab
-        this._currentTab = targetTab;
-        // Gán lại class
-        this._addClassName();
-        // Gọi lại hàm xử lý trạng thái active
-        this._activeHandler();
-    };
-
-    // Hàm destroy
-    this.destroy = () => {
-        this._removeClassName();
-
-        tabChilds.forEach((child) => {
-            const tabContent = this._getTabContent(child);
-            if (!tabContent) return;
-            tabContent.style.cssText = '';
-        });
-
-        tabId.removeEventListener('click', this._handleClick);
-
-        this._currentTab = null;
-    };
-
-    this._handleClick = (e) => {
-        const tabLink = e.target.closest('a[href]');
-        if (tabLink) {
-            e.preventDefault();
-            const currentTabId = tabLink.getAttribute('href');
-            this.toggle(currentTabId);
-        }
-    };
-
-    // Xử lý click vào thẻ li
-    tabId.addEventListener('click', this._handleClick);
+    this._classNames = ('tabzy--active ' + (this.opt.cssClass ?? '')).trim();
 
     this._addClassName();
     this._activeHandler();
-}
+};
+
+// Hàm gán class cho currentTab
+Tabzy.prototype._addClassName = function () {
+    this._classNames.split(' ').forEach((className) => {
+        this._currentTab.classList.add(className);
+    });
+};
+
+// Hàm gỡ class cho currentTab
+Tabzy.prototype._removeClassName = function () {
+    this._classNames.split(' ').forEach((className) => {
+        this._currentTab.classList.remove(className);
+    });
+};
+
+// Hàm xử lý trạng thái active: nếu li không có class 'tabzy--active' thì content tương ứng sẽ bị ẩn
+Tabzy.prototype._activeHandler = function () {
+    this._tabs.forEach((tab) => {
+        const panel = this._getPanel(tab);
+        if (!panel) return;
+
+        if (tab.classList.contains('tabzy--active')) {
+            panel.style.display = this.opt.contentDisplay;
+        } else {
+            panel.style.display = 'none';
+        }
+    });
+};
+
+// Hàm lấy panel tương ứng với thẻ li tab
+Tabzy.prototype._getPanel = (tab) => {
+    const tabLink = tab.querySelector('a[href]');
+    if (!tabLink) return;
+
+    const panelId = tabLink.getAttribute('href');
+    const panel = document.querySelector(panelId);
+
+    return panel;
+};
+
+// Hàm switch
+Tabzy.prototype.switch = function (id) {
+    const tabLink = this._container.querySelector(`[href='${id}']`);
+    if (!tabLink) return;
+
+    const targetTab = tabLink.closest('li');
+
+    if (!targetTab || targetTab === this._currentTab) return;
+    // Gỡ class mặc định khỏi currentTab
+    this._removeClassName();
+    // Gán lại currentTab
+    this._currentTab = targetTab;
+    // Gán lại class
+    this._addClassName();
+    // Gọi lại hàm xử lý trạng thái active
+    this._activeHandler();
+};
+
+// Hàm destroy
+Tabzy.prototype.destroy = function () {
+    this._removeClassName();
+
+    this._tabs.forEach((tab) => {
+        const panel = this._getPanel(tab);
+        if (!panel) return;
+        panel.style.cssText = '';
+    });
+
+    this._currentTab = null;
+};
+
+Tabzy.prototype._handleClick = function (e) {
+    const tabLink = e.target.closest('a[href]');
+    if (tabLink) {
+        e.preventDefault();
+        const currentTabId = tabLink.getAttribute('href');
+        this.switch(currentTabId);
+
+        window.location.hash = tabLink.getAttribute('href').slice(1);
+    }
+};
