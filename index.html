@@ -4,36 +4,114 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="./src/tabzy.css" />
-        <style>
-            .tabzy--active a {
-                font-weight: bold;
-                color: green;
-            }
-        </style>
         <title>Tabzy</title>
     </head>
     <body>
-        <ul id="tabs">
-            <li><a href="#tab1">Tab 1</a></li>
-            <li><a href="#tab2">Tab 2</a></li>
-            <li><a href="#tab3">Tab 3</a></li>
-        </ul>
+        <div class="tab-demo-1">
+            <div id="tabs1-wrapper">
+                <ul id="tabs1" class="tabs1">
+                    <li><a href="#about">Tab 1</a></li>
+                    <li><a href="#pricing">Tab 2</a></li>
+                    <li><a href="#contact">Tab 3</a></li>
+                </ul>
+            </div>
 
-        <div id="tab1">Tab 1 content</div>
-        <div id="tab2">Tab 2 content</div>
-        <div id="tab3">Tab 3 content</div>
+            <div class="panels">
+                <div id="about" class="panel">
+                    <h3 class="panel__title">Tab 1 content</h3>
+                    <p class="panel__title">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati quaerat ea a est impedit
+                        cupiditate at excepturi rerum natus corporis sit totam tempora ipsa sequi commodi, consectetur
+                        aliquam repellendus minus?
+                    </p>
+                </div>
+                <div id="pricing" class="panel">
+                    <h3 class="panel__title">Tab 2 content</h3>
+                    <p class="panel__title">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Laborum, consequuntur.
+                    </p>
+                </div>
+                <div id="contact" class="panel">
+                    <h3 class="panel__title">Tab 3 content</h3>
+                    <p class="panel__title">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Vel accusamus nisi, placeat voluptas
+                        vitae temporibus doloribus, impedit labore repudiandae dolor laborum. Vel ipsam voluptatibus
+                        incidunt pariatur illo laborum nobis placeat quis accusantium dolor, soluta at facere neque
+                        corrupti aperiam.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-demo-2">
+            <div id="tabs2-wrapper">
+                <ul id="tabs2" class="tabs2">
+                    <li><a href="#name">Tab A</a></li>
+                    <li><a href="#age">Tab B</a></li>
+                    <li><a href="#address">Tab C</a></li>
+                </ul>
+            </div>
+
+            <div class="panels">
+                <div id="name" class="panel">
+                    <h3 class="panel__title">Tab A content</h3>
+                    <p class="panel__desc">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusamus corrupti eum labore incidunt
+                        modi animi!
+                    </p>
+                </div>
+                <div id="age" class="panel">
+                    <h3 class="panel__title">Tab B content</h3>
+                    <p class="panel__desc">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione, repellat ex facere optio
+                        recusandae aperiam quam fuga dicta dolorem est, sapiente nostrum architecto commodi, iste minima
+                        molestias eveniet qui culpa.
+                    </p>
+                </div>
+                <div id="address" class="panel">
+                    <h3 class="panel__title">Tab C content</h3>
+                    <p class="panel__desc">
+                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Iure qui voluptate rerum eum ratione
+                        similique.
+                    </p>
+                </div>
+            </div>
+        </div>
 
         <script src="./src/tabzy.js"></script>
 
+        <!-- Usage example -->
         <script>
-            const tabs = new Tabzy('tabs', {
+            const tabs1 = new Tabzy('#tabs1', {
                 cssClass: 'tab-primary tab-child',
                 panelDisplay: 'flex',
-                hash: true,
+                remember: true,
+                border: {
+                    wrapperSelector: '#tabs1-wrapper',
+                    position: 'left',
+                    thickness: '4px',
+                    background: '#ff8040',
+                    animationTime: '0.3s',
+                    easing: 'ease-out',
+                },
+                onChange: (data = {}) => {
+                    console.log(`Changed to tab: ${data.tab.innerText}`);
+                    console.log(`Changed to panel: ${data.panel.innerText}`);
+                },
             });
 
-            // tabs.switch('tab2');
-            // tabs.destroy();
+            const tabs2 = new Tabzy('#tabs2', {
+                remember: true,
+                restoreHTMLOnDestroy: true,
+                border: {
+                    wrapperSelector: '#tabs2-wrapper',
+                    position: 'bottom',
+                    thickness: '3px',
+                    background: '#393e46',
+                    animationTime: '0.5s',
+                    easing: 'ease-in-out',
+                },
+            });
         </script>
     </body>
 </html>
