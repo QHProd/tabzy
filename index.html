@@ -8,13 +8,11 @@
     </head>
     <body>
         <div class="tab-demo-1">
-            <div id="tabs1-wrapper">
-                <ul id="tabs1" class="tabs1">
-                    <li><a href="#about">Tab 1</a></li>
-                    <li><a href="#pricing">Tab 2</a></li>
-                    <li><a href="#contact">Tab 3</a></li>
-                </ul>
-            </div>
+            <ul id="tabs1" class="tabs1">
+                <li><a href="#about">Tab 1</a></li>
+                <li><a href="#pricing">Tab 2</a></li>
+                <li><a href="#contact">Tab 3</a></li>
+            </ul>
 
             <div class="panels">
                 <div id="about" class="panel">
@@ -44,13 +42,11 @@
         </div>
 
         <div class="tab-demo-2">
-            <div id="tabs2-wrapper">
-                <ul id="tabs2" class="tabs2">
-                    <li><a href="#name">Tab A</a></li>
-                    <li><a href="#age">Tab B</a></li>
-                    <li><a href="#address">Tab C</a></li>
-                </ul>
-            </div>
+            <ul id="tabs2" class="tabs2">
+                <li><a href="#name">Tab A</a></li>
+                <li><a href="#age">Tab B</a></li>
+                <li><a href="#address">Tab C</a></li>
+            </ul>
 
             <div class="panels">
                 <div id="name" class="panel">
@@ -87,7 +83,6 @@
                 panelDisplay: 'flex',
                 remember: true,
                 border: {
-                    wrapperSelector: '#tabs1-wrapper',
                     position: 'left',
                     thickness: '4px',
                     background: '#ff8040',
@@ -95,8 +90,8 @@
                     easing: 'ease-out',
                 },
                 onChange: (data = {}) => {
-                    console.log(`Changed to tab: ${data.tab.innerText}`);
-                    console.log(`Changed to panel: ${data.panel.innerText}`);
+                    // console.log(`Changed to tab: ${data.tab.innerText}`);
+                    // console.log(`Changed to panel: ${data.panel.innerText}`);
                 },
             });
 
@@ -104,7 +99,6 @@
                 remember: true,
                 restoreHTMLOnDestroy: true,
                 border: {
-                    wrapperSelector: '#tabs2-wrapper',
                     position: 'bottom',
                     thickness: '3px',
                     background: '#393e46',

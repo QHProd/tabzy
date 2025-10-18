@@ -18,7 +18,7 @@ function Tabzy(selector, options = {}) {
 
     this._tabs = Array.from(this._container.querySelectorAll('li a[href]')); // từ thẻ ul lấy ra các thẻ a có href và là con của li
     if (this._tabs.length === 0) {
-        throw new Error(`Tabzy: no <li> children found inside #${selector}.`);
+        throw new Error(`Tabzy: no tabs (li a[href]) found inside selector "${selector}".`);
     }
 
     const panels = this._tabs
@@ -165,25 +165,13 @@ Tabzy.prototype._removeClassName = function () {
 };
 
 Tabzy.prototype._initBorder = function () {
-    const { wrapperSelector, position, thickness, background, animationTime, easing } =
-        this.opt.border;
+    const { position, thickness, background, animationTime, easing } = this.opt.border;
 
-    this.wrapper = document.querySelector(wrapperSelector);
-
-    if (!this.wrapper) {
-        throw new Error(
-            `Tabzy Border Error: Wrapper element not found for selector "${wrapperSelector}".\n\n` +
-                `To use the animated border feature, your tab list (<ul>) must be enclosed within a wrapper element (typically a <div>). Please ensure this wrapper exists in your HTML.\n\n` +
-                `Example HTML Structure:\n` +
-                `\n` +
-                `<div id="my-tabs-wrapper">\n` +
-                `  <ul id="my-tabs">...</ul>\n` +
-                `</div>\n\n` +
-                `Alternatively, for a simple static border, you can remove the 'border' option and apply your styles directly to the '.tabzy--active' class in your CSS.`
-        );
-    }
-
-    this._inlinePosition = this.wrapper.style.position;
+    // Tạo wrapper
+    this.wrapper = document.createElement('div'); // mà thư viện tabzy sẽ tự tạo
+    this.wrapper.className = 'line-wrapper';
+    this._container.parentNode.insertBefore(this.wrapper, this._container);
+    this.wrapper.appendChild(this._container);
 
     const computed = getComputedStyle(this.wrapper);
 
@@ -229,7 +217,7 @@ Tabzy.prototype._initBorder = function () {
     });
 
     // Gán lại transition
-    setTimeout(() => {
+    this._initBorderTimeout = setTimeout(() => {
         this._borderElement.style.transition = this.borderTransition;
     }, 50);
 };
@@ -357,11 +345,22 @@ Tabzy.prototype.switch = function (input) {
     if (this.opt.remember) {
         const tabHref = this._sanitizeSelector(tab.getAttribute('href'));
 
-        const searchParams = new URLSearchParams(location.search);
+        // Cách cũ: OK nhưng dài dòng và phải tự nối chuỗi
+        // const searchParams = new URLSearchParams(location.search);
+        // searchParams.set(this.searchParamKey, tabHref);
+        // const newUrl = location.pathname + '?' + searchParams.toString() + location.hash;
+        // history.replaceState(null, '', newUrl);
 
-        searchParams.set(this.searchParamKey, tabHref);
+        // Cách mới: ngắn gọn hơn
+        // 1. Tạo một bản sao của URL hiện tại (bao gồm cả hash, path, mọi thứ)
+        const newUrl = new URL(location.href);
 
-        history.replaceState(null, '', '?' + searchParams.toString());
+        // 2. Chỉ cần đặt lại phần search (phần query params)
+        // newUrl.searchParams đã tự động trỏ đến đúng searchParams của URL đó
+        newUrl.searchParams.set(this.searchParamKey, tabHref);
+
+        // 3. Cập nhật lịch sử. newUrl.href sẽ tự động bao gồm cả path, search, và hash.
+        history.replaceState(null, '', newUrl.href);
     }
 
     // Hàm xử lý khi thay đổi tab
@@ -387,13 +386,6 @@ Tabzy.prototype.destroy = function () {
         }
     });
 
-    if (this.wrapper) {
-        if (this._inlinePosition === '') {
-            this.wrapper.style.removeProperty('position');
-        } else {
-            this.wrapper.style.position = this._inlinePosition;
-        }
-    }
     // Cleanup event listeners
     this._container.removeEventListener('click', this._boundHandleClick);
     if (this._boundHandleResize) {
@@ -401,9 +393,22 @@ Tabzy.prototype.destroy = function () {
     }
 
     // Cleanup timeout
+    if (this._initBorderTimeout) {
+        clearTimeout(this._initBorderTimeout);
+        this._initBorderTimeout = null;
+    }
     if (this._restoreTransitionTimeout) {
         clearTimeout(this._restoreTransitionTimeout);
         this._restoreTransitionTimeout = null;
+    }
+
+    if (this.wrapper) {
+        // 1. Di chuyển container ra ngoài, về vị trí cũ (trước wrapper)
+        this.wrapper.parentNode.insertBefore(this._container, this.wrapper);
+        // 2. Xóa wrapper (việc này cũng tự động xóa _borderElement bên trong nó)
+        this.wrapper.remove();
+        this.wrapper = null;
+        this._borderElement = null; // Đã bị xóa cùng wrapper, gán null là đủ
     }
 
     // Reset HTML
@@ -413,19 +418,12 @@ Tabzy.prototype.destroy = function () {
     }
 
     // Clear references
-    this.wrapper = null;
     this._currentTab = null;
     this._tabs = null;
     this._container = null;
     this._classNamesArray = null;
     this._boundHandleClick = null;
     this._boundHandleResize = null;
-
-    // Cleanup border
-    if (this._borderElement) {
-        this._borderElement.remove();
-        this._borderElement = null;
-    }
 };
 
 Tabzy.prototype._handleClick = function (e) {
